@@ -50,15 +50,21 @@ resource "aws_route_table" "example" {
 }
 
 
-resource "aws_default_route_table" "private_route" {
-  default_route_table_id = "${aws_vpc.main.default_route_table_id}"
+resource "aws_route_table" "private_route" {
+  vpc_id = aws_vpc.main.id
 
   route {
-    nat_gateway_id = "${aws_nat_gateway.my-test-nat-gateway.id}"
-    cidr_block     = "0.0.0.0/0"
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_nat_gateway.example.id
+  }
+
+  route {
+    ipv6_cidr_block        = "::/0"
+    egress_only_gateway_id = aws_egress_only_internet_gateway.example.id
   }
 
   tags = {
-    Name = "my-private-route-table"
+    Name = "main"
   }
 }
+
