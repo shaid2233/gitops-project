@@ -1,5 +1,5 @@
 resource "aws_vpc" "main" {
-  cidr_block       = "10.0.0.0/16"
+  cidr_block       = "10.0.0.0/8"
   instance_tenancy = "default"
 
   tags = {
@@ -27,5 +27,38 @@ resource "aws_internet_gateway" "gw" {
 
   tags = {
     Name = "main"
+  }
+}
+
+
+resource "aws_route_table" "example" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.example.id
+  }
+
+  route {
+    ipv6_cidr_block        = "::/0"
+    egress_only_gateway_id = aws_egress_only_internet_gateway.example.id
+  }
+
+  tags = {
+    Name = "main"
+  }
+}
+
+
+resource "aws_default_route_table" "private_route" {
+  default_route_table_id = "${aws_vpc.main.default_route_table_id}"
+
+  route {
+    nat_gateway_id = "${aws_nat_gateway.my-test-nat-gateway.id}"
+    cidr_block     = "0.0.0.0/0"
+  }
+
+  tags = {
+    Name = "my-private-route-table"
   }
 }
