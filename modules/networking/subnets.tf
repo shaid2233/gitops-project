@@ -1,4 +1,4 @@
-resource "aws_subnet" "public_subnet" {
+resource "aws_subnet" "public_subnet for nat gateway" {
   vpc_id     = aws_vpc.main.id
   cidr_block = "10.0.1.0/24"
   availability_zone = "us-east-1a"
@@ -10,25 +10,15 @@ resource "aws_subnet" "public_subnet" {
 }
 
 
+resource "aws_subnet" "private" {
+  count = 2
 
-resource "aws_subnet" "private_with_egress"  {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.0.1.0/24"
-  availability_zone = "us-east-1a"
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.private_subnet_cidrs[count.index]
+  availability_zone = var.azs[count.index]
 
   tags = {
-    Name = "Main"
-  }
-}
-
-
-
-resource "aws_subnet" "private_with_egress" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.0.1.0/24"
-  availability_zone = "us-east-1a"
-  tags = {
-    Name = "Main"
+    Name = "private-${count.index}"
   }
 }
 

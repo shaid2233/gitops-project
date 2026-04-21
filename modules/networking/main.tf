@@ -22,6 +22,28 @@ resource "aws_nat_gateway" "example" {
 }
 
 
+
+resource "aws_route_table" "nat_gateway" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_nat_gateway.example.id
+  }
+
+  route {
+    ipv6_cidr_block        = "::/0"
+    egress_only_gateway_id = aws_egress_only_internet_gateway.example.id
+  }
+
+  tags = {
+    Name = "main"
+  }
+}
+
+
+
+
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
 
@@ -29,7 +51,6 @@ resource "aws_internet_gateway" "gw" {
     Name = "main"
   }
 }
-
 
 resource "aws_route_table" "internet_gateway" {
   vpc_id = aws_vpc.main.id
@@ -50,23 +71,7 @@ resource "aws_route_table" "internet_gateway" {
 }
 
 
-resource "aws_route_table" "nat_gateway" {
-  vpc_id = aws_vpc.main.id
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_nat_gateway.example.id
-  }
-
-  route {
-    ipv6_cidr_block        = "::/0"
-    egress_only_gateway_id = aws_egress_only_internet_gateway.example.id
-  }
-
-  tags = {
-    Name = "main"
-  }
-}
 
 
 
