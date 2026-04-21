@@ -23,15 +23,26 @@ resource "aws_subnet" "private" {
 }
 
 
-resource "aws_db_subnet_group" "default" {
-  name       = "main"
-  subnet_ids = [aws_subnet.private[0].id, aws_subnet.private[1].id]
+resource "aws_subnet" "database_subnet" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.1.0/24"
+  availability_zone = "us-east-1a"
 
   tags = {
-    Name = "My DB subnet group"
+    Name = "Main"
   }
 }
 
 
+resource "aws_subnet" "database_subnet" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.1.0/24"
+  availability_zone = "us-east-1a"
+
+
+  tags = {
+    Name = "Main"
+  }
+}
 
 
