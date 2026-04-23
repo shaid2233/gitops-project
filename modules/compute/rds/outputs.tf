@@ -15,3 +15,10 @@ output "rds_username" {
   value       = aws_db_instance.education.username
   sensitive   = true
 }
+
+
+output "rds_endpoint" {
+  description = "The connection endpoint for the RDS instance"
+  value       = aws_db_instance.education.endpoint
+}
+

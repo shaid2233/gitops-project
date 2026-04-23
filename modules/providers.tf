@@ -11,3 +11,13 @@ terraform {
 provider "aws" {
   region = "us-east-1"
 }
+
+resource "helm_release" "app" {
+  name  = "my-app"
+  chart = "./chart"
+
+  set = {
+    name  = "db.endpoint"
+    value = aws_db_instance.education.endpoint
+  }
+}
