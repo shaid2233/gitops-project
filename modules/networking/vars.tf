@@ -1,11 +1,17 @@
-variable "private_subnet_cidrs" {
-  type        = list(string)
-  description = "CIDR blocks for the private subnets"
-  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+resource "google_compute_subnetwork" "private" {
+  count = 2
+
+  name          = "private-${count.index}"
+  ip_cidr_range = "10.0.1.0/24"
+  region        = var.region
+  network       = google_compute_network.main.id
+
+  private_ip_google_access = true
 }
 
-variable "azs" {
-  type        = list(string)
-  description = "Availability zones for the private subnets"
-  default     = ["us-east-1a", "us-east-1b"]
+
+variable "region" {
+  description = "The GCP region to deploy resources into"
+  type        = string
+  default     = "europe-west1"
 }

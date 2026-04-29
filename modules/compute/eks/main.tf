@@ -1,46 +1,48 @@
-module "eks" {
-  source  = "terraform-aws-modules/eks/aws"
-  version = "20.8.5"
+resource "google_compute_network" "default" {
+  name = "example-network"
 
-  cluster_name    = "education"
-  cluster_version = "1.29"
+  auto_create_subnetworks  = false
+  enable_ula_internal_ipv6 = true
+}
 
-  cluster_endpoint_public_access           = true
-  enable_cluster_creator_admin_permissions = true
+resource "google_compute_subnetwork" "default" {
+  name = "example-subnetwork"
 
-  cluster_addons = {
-    aws-ebs-csi-driver = {
-      service_account_role_arn = module.irsa-ebs-csi.iam_role_arn
-    }
+  ip_cidr_range = "10.0.0.0/16"
+  region        = "europe-west1"
+
+  stack_type       = "IPV4_IPV6"
+  ipv6_access_type = "INTERNAL" # Change to "EXTERNAL" if creating an external loadbalancer
+
+  network = google_compute_network.default.id
+  secondary_ip_range {
+    range_name    = "services-range"
+    ip_cidr_range = "192.168.0.0/24"
   }
 
-  vpc_id     = aws_vpc.main.id
-  subnet_ids = aws_subnet.private[*].id
+  secondary_ip_range {
+    range_name    = "pod-ranges"
+    ip_cidr_range = "192.168.1.0/24"
+  }
+}
 
-  eks_managed_node_group_defaults = {
-    ami_type = "AL2_x86_64"
+resource "google_container_cluster" "default" {
+  name = "example-autopilot-cluster"
 
+  location                 = "us-central1"
+  enable_autopilot         = true
+  enable_l4_ilb_subsetting = true
+
+  network    = google_compute_network.default.id
+  subnetwork = google_compute_subnetwork.default.id
+
+  ip_allocation_policy {
+    stack_type                    = "IPV4_IPV6"
+    services_secondary_range_name = google_compute_subnetwork.default.secondary_ip_range[0].range_name
+    cluster_secondary_range_name  = google_compute_subnetwork.default.secondary_ip_range[1].range_name
   }
 
-  eks_managed_node_groups = {
-    one = {
-      name = "node-group-1"
-
-      instance_types = ["t3.small"]
-
-      min_size     = 1
-      max_size     = 3
-      desired_size = 2
-    }
-
-    two = {
-      name = "node-group-2"
-
-      instance_types = ["t3.small"]
-
-      min_size     = 1
-      max_size     = 2
-      desired_size = 1
-    }
-  }
+  # Set `deletion_protection` to `true` will ensure that one cannot
+  # accidentally delete this instance by use of Terraform.
+  deletion_protection = false
 }

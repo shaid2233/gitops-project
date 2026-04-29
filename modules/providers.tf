@@ -1,23 +1,8 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 6.0"
-    }
-  }
+locals {
+  terraform_service_account = "terraform-sa@project-252f73a6-70da-438f-b12.iam.gserviceaccount.com"
 }
 
-# Configure the AWS Provider
-provider "aws" {
-  region = "us-east-1"
-}
-
-resource "helm_release" "app" {
-  name  = "my-app"
-  chart = "./chart"
-
-  set = {
-    name  = "db.endpoint"
-    value = aws_db_instance.education.endpoint
-  }
+provider "google" {
+  project                     = "967637022650"
+  impersonate_service_account = local.terraform_service_account
 }

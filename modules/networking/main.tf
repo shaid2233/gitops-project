@@ -1,80 +1,64 @@
-resource "aws_vpc" "main" {
-  cidr_block       = "10.0.0.0/8"
-  instance_tenancy = "default"
-
-  tags = {
-    Name = "main"
-  }
+# -----------------------------
+# VPC
+# -----------------------------
+resource "google_compute_network" "main" {
+  name                    = "main-vpc"
+  auto_create_subnetworks = false
 }
 
-
-resource "aws_nat_gateway" "example" {
-  allocation_id = aws_eip.example.id
-  subnet_id     = aws_subnet.public_subnet.id
-
-  tags = {
-    Name = "gw NAT"
-  }
-
-  # To ensure proper ordering, it is recommended to add an explicit dependency
-  # on the Internet Gateway for the VPC.
-  depends_on = [aws_internet_gateway.example]
+# -----------------------------
+# Public Subnet
+# -----------------------------
+resource "google_compute_subnetwork" "public_subnet" {
+  name          = "public-subnet"
+  ip_cidr_range = "10.0.1.0/24"
+  region        = var.region
+  network       = google_compute_network.main.id
 }
 
+# -----------------------------
+# Private Subnet
+# -----------------------------
+resource "google_compute_subnetwork" "private_subnet" {
+  name          = "private-subnet"
+  ip_cidr_range = var.google_compute_subnetwork.private_subnet_cidr
+  region        = var.region
+  network       = google_compute_network.main.id
 
-
-resource "aws_route_table" "nat_gateway" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_nat_gateway.example.id
-  }
-
-  route {
-    ipv6_cidr_block        = "::/0"
-    egress_only_gateway_id = aws_egress_only_internet_gateway.example.id
-  }
-
-  tags = {
-    Name = "main"
-  }
+  private_ip_google_access = true
 }
 
-
-
-
-resource "aws_internet_gateway" "gw" {
-  vpc_id = aws_vpc.main.id
-
-  tags = {
-    Name = "main"
-  }
+# -----------------------------
+# Cloud Router
+# -----------------------------
+resource "google_compute_router" "router" {
+  name    = "main-router"
+  region  = var.region
+  network = google_compute_network.main.id
 }
 
-resource "aws_route_table" "internet_gateway" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.example.id
-  }
-
-  route {
-    ipv6_cidr_block        = "::/0"
-    egress_only_gateway_id = aws_egress_only_internet_gateway.example.id
-  }
-
-  tags = {
-    Name = "main"
-  }
+# -----------------------------
+# NAT Gateway (Cloud NAT)
+# -----------------------------
+resource "google_compute_router_nat" "nat" {
+  name                               = "main-nat"
+  router                             = google_compute_router.router.name
+  region                             = var.region
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 }
 
+# -----------------------------
+# Firewall Rule (Internet Inbound)
+# -----------------------------
+resource "google_compute_firewall" "allow_ssh_http" {
+  name    = "allow-ssh-http"
+  network = google_compute_network.main.name
 
+  allow {
+    protocol = "tcp"
+    ports    = ["22", "80", "443"]
+  }
 
-
-
-
-data "aws_availability_zones" "available" {
-  state = "available"
+  source_ranges = ["0.0.0.0/0"]
 }

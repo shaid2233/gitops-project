@@ -1,8 +1,10 @@
-resource "aws_ecr_repository" "foo" {
-  name                 = "bar"
-  image_tag_mutability = "MUTABLE"
+provider "google" {
+  project = "project-252f73a6-70da-438f-b12"
+  region  = "europe-west1"
+}
 
-  image_scanning_configuration {
-    scan_on_push = true
-  }
+resource "google_artifact_registry_repository" "repo" {
+  location      = "europe-west1"
+  repository_id = "my-docker-repo"
+  format        = "DOCKER"
 }
